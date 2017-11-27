@@ -142,7 +142,7 @@ def main(wf):
 
 if __name__ == '__main__':
     wf = Workflow3(update_settings = {
-        'github_slug': 'thanos-irodotou/ghelper',
+        'github_slug': 'thanosIrodotou/ghelper',
         'frequency': 7
     })
     log = wf.logger
