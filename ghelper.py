@@ -121,6 +121,13 @@ def refresh_cache():
 
 
 def main(wf):
+    if wf.update_available:
+        log.info('UPDATE AVAILABLE')
+        wf.add_item('New version available',
+                'Action this item to install the update',
+                autocomplete='workflow:update',
+                icon=ICON_INFO)
+
     opts = docopt.docopt(__doc__, argv=wf.args, version=wf.version)
     query = opts['<query>']
 
@@ -141,12 +148,9 @@ def main(wf):
 
 
 if __name__ == '__main__':
-    wf = Workflow3(update_settings = {
-        'github_slug': 'thanosIrodotou/ghelper',
-        'frequency': 7
-    })
+    wf = Workflow3(
+        update_settings = {'github_slug': 'thanosIrodotou/ghelper'},
+        help_url='https://github.com/thanosIrodotou/ghelper/issues'
+    )
     log = wf.logger
-    if wf.update_available:
-        log.info('UPDATE AVAILABLE')
-        wf.start_update()
     sys.exit(wf.run(main, text_errors=True))
