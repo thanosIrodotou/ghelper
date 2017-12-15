@@ -48,7 +48,8 @@ MIN_VERSION = Version(open(VERSION_FILE).read())
 h = HTMLParser()
 
 BASE_URL = "https://api.github.com"
-ACCESS_TOKEN = "IamAGoodToken"
+ACCESS_TOKEN = os.getenv('token')
+ORG = os.getenv('org')
 MATCH = (MATCH_STARTSWITH |
          MATCH_CAPITALS |
          MATCH_ATOM |
@@ -69,7 +70,7 @@ def list_actions():
              arg='gogithub',
              uid='gogithub',
              valid=True),
-        dict(title='CLEAR REPOSITORY CACHE',
+        dict(title='CLEAR REPOSITORY+USER CACHE',
              subtitle='Clears any cached repositories (next lookup will rebuild the cache)',
              arg='refreshcache',
              uid='refreshcache',
@@ -100,7 +101,7 @@ def iterate_repos():
 
 def get_repos(page=None):
     list_request = web.get(
-        'https://api.github.com/orgs/<organisation>/repos?page={}&per_page=100&type=private'.format(page),
+        'https://api.github.com/orgs/{}/repos?page={}&per_page=100&type=private'.format(ORG, page),
         headers={'Authorization': 'token ' + ACCESS_TOKEN}
     )
     return list_request.json()
@@ -127,7 +128,7 @@ def iterate_members():
 def get_members(page=None):
     log.warn('calling')
     list_request = web.get(
-        'https://api.github.com/orgs/<organisation>/members?page={}'.format(page),
+        'https://api.github.com/orgs/{}/members?page={}'.format(ORG,page),
         headers={'Authorization': 'token ' + ACCESS_TOKEN}
     )
     return list_request.json()
@@ -135,7 +136,7 @@ def get_members(page=None):
 
 def get_open_prs(repo):
     response = web.get(
-        'https://api.github.com/repos/<organisation>/{}/pulls?state=open'.format(repo),
+        'https://api.github.com/repos/{}/{}/pulls?state=open'.format(ORG, repo),
         headers={'Authorization': 'token ' + ACCESS_TOKEN}
     )
 
@@ -178,7 +179,7 @@ def main(wf):
 
     if opts['refreshcache']:
         refresh_cache()
-        wf.add_item('cache removed', 'next repo search will trigger a rebuild')
+        wf.add_item('caches removed', 'next repo search will trigger a rebuild')
 
     wf.send_feedback()
 
