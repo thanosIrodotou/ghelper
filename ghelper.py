@@ -6,6 +6,7 @@
 Usage:
     gh list
     gh repos <query>
+    gh users <query>
     gh pulls <query>
     gh refreshcache
     gh [-n]
@@ -63,8 +64,13 @@ def list_actions():
              arg='log',
              uid='log',
              valid=True),
+        dict(title='View source code',
+             subtitle='View the code for this workflow on github.com',
+             arg='gogithub',
+             uid='gogithub',
+             valid=True),
         dict(title='CLEAR REPOSITORY CACHE',
-             subtitle='Clears any cached repositories (next lookup will rebuild the cache).',
+             subtitle='Clears any cached repositories (next lookup will rebuild the cache)',
              arg='refreshcache',
              uid='refreshcache',
              valid=True)
@@ -87,14 +93,41 @@ def get_items():
 def iterate_repos():
     data = [{'id': val['id'], 'name': val['name'], 'url': val['html_url']}
             for page in range(1, 8)
-            for val in get_issues(page)]
+            for val in get_repos(page)]
 
     return data
 
 
-def get_issues(page=None):
+def get_repos(page=None):
     list_request = web.get(
         'https://api.github.com/orgs/<organisation>/repos?page={}&per_page=100&type=private'.format(page),
+        headers={'Authorization': 'token ' + ACCESS_TOKEN}
+    )
+    return list_request.json()
+
+
+def search_members(query):
+    items = wf.filter(query, get_member_items(),  key=lambda d: d['login'], match_on=MATCH, min_score=50)
+    for item in items:
+        wf.add_item(item['login'], item['url'], arg=item['login'], valid=True)
+
+
+def get_member_items():
+    return wf.cached_data('private-users', functools.partial(iterate_members), max_age=0)
+
+
+def iterate_members():
+    data = [{'id': val['id'], 'login': val['login'], 'url': val['html_url']}
+            for page in range(1, 7)
+            for val in get_members(page)]
+
+    return data
+
+
+def get_members(page=None):
+    log.warn('calling')
+    list_request = web.get(
+        'https://api.github.com/orgs/<organisation>/members?page={}'.format(page),
         headers={'Authorization': 'token ' + ACCESS_TOKEN}
     )
     return list_request.json()
@@ -136,6 +169,9 @@ def main(wf):
 
     if opts['repos']:
         search_repos(query)
+
+    if opts['users']:
+        search_members(query)
 
     if opts['pulls']:
         get_open_prs(query)
